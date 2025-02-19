@@ -1,10 +1,12 @@
 import supabase from "../config/db.js";
 
-export async function addPhoto(user_id, task_id, photo_url) {
+// 📌 Ajouter une photo en base de données
+export async function addPhoto(userId, taskId, photoUrl) {
     const { data, error } = await supabase
         .from("photos")
-        .insert([{ user_id, task_id, photo_url }])
-        .select();
+        .insert([{ task_id: taskId, photo_url: photoUrl,user_id: userId, },])
+        .select()
+        .single();
 
     if (error) {
         throw new Error(error.message);
@@ -12,6 +14,7 @@ export async function addPhoto(user_id, task_id, photo_url) {
     return data;
 }
 
+// 📌 Récupérer les photos d'une tâche
 export async function getPhotosByTask(taskId) {
     const { data, error } = await supabase
         .from("photos")
@@ -19,19 +22,25 @@ export async function getPhotosByTask(taskId) {
         .eq("task_id", taskId);
 
     if (error) {
+        console.error("❌ Erreur Supabase :", error);
         throw new Error(error.message);
     }
+    console.log("✅ Photo ajoutée :", data);
     return data;
 }
 
+// 📌 Supprimer une photo en base de données
 export async function deletePhoto(photoId) {
     const { data, error } = await supabase
         .from("photos")
         .delete()
-        .eq("id", photoId);
+        .eq("id", photoId)
+        .select()
+        .single();
 
     if (error) {
         throw new Error(error.message);
     }
     return data;
 }
+

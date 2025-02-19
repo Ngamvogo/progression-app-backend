@@ -1,11 +1,19 @@
-import express from "express";
-import { uploadMiddleware, uploadPhoto, getTaskPhotos, removePhoto, generateBeforeAfter } from "../controllers/photoController.js";
+import express from 'express';
+import { uploadPhoto, getTaskPhotos, removePhoto, generateBeforeAfterImage  } from '../controllers/photoController.js';
+import multer from 'multer';
 
 const router = express.Router();
 
-router.post("/upload", uploadMiddleware, uploadPhoto);  // Ajout de Multer comme middleware
+// Configuration de multer pour gérer les uploads
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// Route pour uploader une photo
+router.post('/upload', upload.single('photo'), uploadPhoto);
 router.get("/task/:taskId", getTaskPhotos);
-router.delete("/:photoId", removePhoto);
-router.get("/before-after/:taskId", generateBeforeAfter);
+
+// Route pour générer une image avant-après
+router.get('/task/:taskId/before-after', generateBeforeAfterImage);
 
 export default router;
+
