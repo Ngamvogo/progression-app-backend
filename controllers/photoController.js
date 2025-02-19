@@ -1,16 +1,34 @@
 import { addPhoto, getPhotosByTask, deletePhoto } from "../models/photoModel.js";
+import multer from "multer";
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Middleware pour gérer l'upload du fichier
+export const uploadMiddleware = upload.single("photo");
 
 // Ajouter une photo
 export async function uploadPhoto(req, res) {
-    const { userId, taskId, photoUrl } = req.body;
+    const { task_id } = req.body;
+    const userId = req.body.user_id; // Assure-toi que Postman envoie bien cet ID
 
     try {
-        const photo = await addPhoto(userId, taskId, photoUrl);
+        if (!req.file) {
+            return res.status(400).json({ error: "Aucun fichier n'a été téléchargé." });
+        }
+
+        // Convertir l'image en base64 pour la stocker dans Supabase (ou utiliser Supabase Storage)
+        const photoBuffer = req.file.buffer;
+        const photoBase64 = photoBuffer.toString("base64");
+
+        // Stocker l'image dans Supabase (tu peux aussi utiliser Supabase Storage pour un vrai fichier)
+        const photo = await addPhoto(userId, task_id, photoBase64);
+
         res.status(201).json(photo);
     } catch (error) {
         res.status(500).json({ error: "Erreur lors de l'ajout de la photo", details: error.message });
     }
 }
+
 
 // Récupérer les photos d'une tâche
 export async function getTaskPhotos(req, res) {
@@ -23,6 +41,8 @@ export async function getTaskPhotos(req, res) {
         res.status(500).json({ error: "Erreur lors de la récupération des photos", details: error.message });
     }
 }
+
+
 
 // Supprimer une photo
 export async function removePhoto(req, res) {

@@ -1,9 +1,10 @@
 import supabase from "../config/db.js";
 
-export async function addPhoto(userId, taskId, photoUrl) {
+export async function addPhoto(user_id, task_id, photo_url) {
     const { data, error } = await supabase
         .from("photos")
-        .insert([{ user_id: userId, task_id: taskId, photo_url: photoUrl }]);
+        .insert([{ user_id, task_id, photo_url }])
+        .select();
 
     if (error) {
         throw new Error(error.message);
