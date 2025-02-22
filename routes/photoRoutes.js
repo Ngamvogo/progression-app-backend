@@ -11,6 +11,8 @@ const upload = multer({ storage });
 // Route pour uploader une photo
 router.post('/upload', upload.single('photo'), uploadPhoto);
 router.get("/task/:taskId", getTaskPhotos);
+router.delete("/:photoId", removePhoto);
+
 
 // Route pour générer une image avant-après
 router.get('/task/:taskId/before-after', generateBeforeAfterImage);

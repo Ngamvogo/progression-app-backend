@@ -1,5 +1,5 @@
 
-import { addPhoto, getPhotosByTask, deletePhoto } from "../models/photoModel.js";
+import { addPhoto, getPhotosByTask, deletePhoto, isTaskOwner } from "../models/photoModel.js";
 import supabase from "../config/db.js";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs/promises";
@@ -19,6 +19,12 @@ export async function uploadPhoto(req, res) {
 
         if (!photoFile) {
             return res.status(400).json({ error: "Aucune image envoyée" });
+        }
+
+        // 🔒 Vérifier si l'utilisateur est bien le créateur de la tâche
+        const isOwner = await isTaskOwner(userId, taskId);
+        if (!isOwner) {
+            return res.status(403).json({ error: "Accès interdit : Vous ne pouvez ajouter une photo qu'à vos propres tâches." });
         }
 
         // Charger et convertir l'image en PNG
@@ -109,24 +115,36 @@ export async function removePhoto(req, res) {
     try {
         const { photoId } = req.params;
 
+        console.log(`🗑️ Tentative de suppression de la photo avec ID: ${photoId}`);
+
         // 📌 Récupérer l'URL de l'image avant suppression
         const photo = await deletePhoto(photoId);
         if (!photo) {
             return res.status(404).json({ error: "Photo non trouvée" });
         }
 
+        console.log(`📸 Photo trouvée en base: ${JSON.stringify(photo)}`);
+
         // 📌 Extraire le nom du fichier et le supprimer de Supabase
         const fileName = photo.photo_url.split("/").pop();
-        await supabase.storage.from("photos").remove([fileName]);
+        const { error } = await supabase.storage.from("photos").remove([fileName]);
+
+        if (error) {
+            throw new Error("Erreur lors de la suppression de l'image: " + error.message);
+        }
+
+        console.log(`✅ Photo supprimée avec succès de Supabase: ${fileName}`);
 
         res.status(200).json({ message: "Photo supprimée avec succès" });
     } catch (error) {
+        console.error("❌ Erreur lors de la suppression de la photo :", error);
         res.status(500).json({
             error: "Erreur lors de la suppression de la photo",
             details: error.message,
         });
     }
 }
+
 // 📌 Générer une image "avant-après"
 export async function generateBeforeAfterImage(req, res) {
     try {
